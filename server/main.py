@@ -1,8 +1,13 @@
 import os
+
+
+import openai
 import uvicorn
 from fastapi import FastAPI, File, HTTPException, Depends, Body, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
 
 from models.api import (
     DeleteRequest,
@@ -11,6 +16,7 @@ from models.api import (
     QueryResponse,
     UpsertRequest,
     UpsertResponse,
+    ChatQuery,
 )
 from datastore.factory import get_datastore
 from services.file import get_document_from_file
@@ -27,6 +33,14 @@ def validate_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_sc
 
 
 app = FastAPI(dependencies=[Depends(validate_token)])
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.mount("/.well-known", StaticFiles(directory=".well-known"), name="static")
 
 # Create a sub-application, in order to access just the query endpoint in an OpenAPI schema, found at http://0.0.0.0:8000/sub/openapi.json when the app is running locally
@@ -106,6 +120,42 @@ async def query(
     except Exception as e:
         print("Error:", e)
         raise HTTPException(status_code=500, detail="Internal Service Error")
+
+@app.post(
+    "/chat-query"
+)
+async def chat_query(
+        request: ChatQuery = Body(...),
+):
+    try:
+        messages = []
+        for message in request.messages:
+            messages.append({
+                "content": message.content,
+                "role":  message.role
+            })
+
+        # call the OpenAI chat completion API with the given messages
+        response = openai.ChatCompletion.create(
+            model=request.model,
+            messages=messages,
+            stream=True,
+            temperature=request.temperature
+        )
+
+        async def iterfile():
+            try:
+                async for chunk in response:
+                    yield chunk.tostring()
+            except Exception as e:
+                print("Error:", e)
+
+        return StreamingResponse(iterfile(), media_type="text/event-stream")
+
+    except Exception as e:
+        print("Error:", e)
+        raise HTTPException(status_code=500, detail="Internal Service Error")
+
 
 
 @app.delete(

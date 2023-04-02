@@ -32,3 +32,15 @@ class DeleteRequest(BaseModel):
 
 class DeleteResponse(BaseModel):
     success: bool
+
+
+class ChatQueryMessage(BaseModel):
+    content: str
+    role: str
+    timestamp: str
+
+
+class ChatQuery(BaseModel):
+    model: str = "gpt-3.5-turbo"
+    messages: List[ChatQueryMessage]
+    temperature: float = 1.0
