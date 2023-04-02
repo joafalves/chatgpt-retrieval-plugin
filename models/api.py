@@ -37,7 +37,7 @@ class DeleteResponse(BaseModel):
 class ChatQueryMessage(BaseModel):
     content: str
     role: str
-    timestamp: str
+    timestamp: Optional[str]
 
 
 class ChatQuery(BaseModel):

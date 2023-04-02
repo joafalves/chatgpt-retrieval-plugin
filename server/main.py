@@ -143,10 +143,10 @@ async def chat_query(
             temperature=request.temperature
         )
 
-        async def iterfile():
+        def iterfile():
             try:
-                async for chunk in response:
-                    yield chunk.tostring()
+                for chunk in response:
+                    yield str(chunk)
             except Exception as e:
                 print("Error:", e)
 
