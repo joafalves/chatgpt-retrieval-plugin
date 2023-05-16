@@ -17,7 +17,7 @@ async def get_document_from_file(file: UploadFile) -> Document:
         source=Source.file,
     )
     doc = Document(text=extracted_text, metadata=metadata)
-
+    doc.id = file.filename  # TODO: modify this if needed
     return doc
 
 

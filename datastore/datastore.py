@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 import asyncio
+import os
 
 from models.models import (
     Document,
@@ -11,8 +12,10 @@ from models.models import (
     QueryWithEmbedding,
 )
 from services.chunks import get_document_chunks
-from services.openai import get_embeddings
+from services.openai import get_embeddings as openai_get_embeddings
+from services.sentence_transformation import get_embeddings as sentence_transformation_get_embeddings
 
+embedding_provider = os.environ.get("EMBEDDING_PROVIDER")
 
 class DataStore(ABC):
     async def upsert(
@@ -37,6 +40,8 @@ class DataStore(ABC):
             ]
         )
 
+        print("Getting document chunks...")
+
         chunks = get_document_chunks(documents, chunk_token_size)
 
         return await self._upsert(chunks)
@@ -56,7 +61,13 @@ class DataStore(ABC):
         """
         # get a list of of just the queries from the Query list
         query_texts = [query.query for query in queries]
-        query_embeddings = get_embeddings(query_texts)
+
+        match embedding_provider:
+            case "sentence_transformer":
+                query_embeddings = sentence_transformation_get_embeddings(query_texts)
+            case _:
+                query_embeddings = openai_get_embeddings(query_texts)
+
         # hydrate the queries with embeddings
         queries_with_embeddings = [
             QueryWithEmbedding(**query.dict(), embedding=embedding)

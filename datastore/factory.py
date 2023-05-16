@@ -19,6 +19,10 @@ async def get_datastore() -> DataStore:
             from datastore.providers.milvus_datastore import MilvusDataStore
 
             return MilvusDataStore()
+        case "milvus_custom":
+            from datastore.providers.milvus_custom_datastore import MilvusCustomDataStore
+
+            return MilvusCustomDataStore()
         case "zilliz":
             from datastore.providers.zilliz_datastore import ZillizDataStore
 

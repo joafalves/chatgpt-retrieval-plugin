@@ -33,8 +33,10 @@ MILVUS_USER = os.environ.get("MILVUS_USER")
 MILVUS_PASSWORD = os.environ.get("MILVUS_PASSWORD")
 MILVUS_USE_SECURITY = False
 
+print(MILVUS_USE_SECURITY)
+
 UPSERT_BATCH_SIZE = 100
-OUTPUT_DIM = 1536
+OUTPUT_DIM = 384
 
 
 class Required:
@@ -92,7 +94,7 @@ SCHEMA = [
 ]
 
 
-class MilvusDataStore(DataStore):
+class MilvusCustomDataStore(DataStore):
     def __init__(
         self,
         create_new: Optional[bool] = False,

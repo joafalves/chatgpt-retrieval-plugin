@@ -1,10 +1,14 @@
 from typing import Dict, List, Optional, Tuple
 import uuid
+
+import services.sentence_transformation
 from models.models import Document, DocumentChunk, DocumentChunkMetadata
 
 import tiktoken
+import os
 
 from services.openai import get_embeddings
+from services.sentence_transformation import *
 
 # Global variables
 tokenizer = tiktoken.get_encoding(
@@ -18,6 +22,7 @@ MIN_CHUNK_LENGTH_TO_EMBED = 5  # Discard chunks shorter than this
 EMBEDDINGS_BATCH_SIZE = 128  # The number of embeddings to request at a time
 MAX_NUM_CHUNKS = 10000  # The maximum number of chunks to generate from a text
 
+embedding_provider = os.environ.get("EMBEDDING_PROVIDER")
 
 def get_text_chunks(text: str, chunk_token_size: Optional[int]) -> List[str]:
     """
@@ -189,7 +194,11 @@ def get_document_chunks(
         ]
 
         # Get the embeddings for the batch texts
-        batch_embeddings = get_embeddings(batch_texts)
+        match embedding_provider:
+            case "sentence_transformer":
+                batch_embeddings = services.sentence_transformation.get_embeddings(batch_texts)
+            case _:
+                batch_embeddings = services.openai.get_embeddings(batch_texts)
 
         # Append the batch embeddings to the embeddings list
         embeddings.extend(batch_embeddings)
